@@ -1,4 +1,8 @@
 <!--
+* Group Work!
+* Code completed by Dusan Barudzija.
+* Connor Carroll assisting in demo and setup Github init for collaboration 
+* in following assignments and labs.
 Student Name: Dusan Barudzija
 Student ID: [YOUR_STUDENT_ID]
 Submission Date: 2026-05-04
