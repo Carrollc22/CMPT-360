@@ -1,6 +1,6 @@
 <!--
 Student Name:    Dusan Barudzija and Connor Carroll
-Student ID:      3121720
+Student ID:      3121720 and 3116723
 Submission Date: May 24, 2026
 File Name:       README.md
 Description:     README for CMPT 360 Assignment 2 – CPU Scheduler Simulator

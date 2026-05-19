@@ -1,6 +1,6 @@
 /*
  * Student Name:    Dusan Barudzija and Connor Carroll
- * Student ID:      3121720
+ * Student ID:      3121720 and 3116723
  * Submission Date: May 24, 2026
  * File Name:       sched.c
  * Description:     CPU scheduler simulator (FCFS policy).
@@ -13,12 +13,16 @@
 #include "sched.h"
 
 // Queue creation
-
+// Param: *q - Pointer to the queue
+// void return
 void queue_init(Queue *q)
 {
     q->head = q->tail = NULL; // Empty Queue creation
 }
 
+// Add element to queue
+// Param: *q - Queue pointer, index - The current process index
+// Void return
 void queue_enqueue(Queue *q, int index)
 {
     QNode *node = malloc(sizeof(QNode)); // Allocate mem to new node
@@ -30,6 +34,9 @@ void queue_enqueue(Queue *q, int index)
     q->tail = node; // New node always new tail
 }
 
+// Remove and return element from queue
+// Param: *q - pointer to queue 
+// Return: index of next process in queue, -1 if null
 int queue_dequeue(Queue *q)
 {
     if (!q->head) return -1;
@@ -41,15 +48,22 @@ int queue_dequeue(Queue *q)
     return idx; // Return process index
 }
 
+// Check if queue is empty
+// Param: *q - pointer to queue
+// Return: 1 if queue is empty, 0 elsewise
 int queue_empty(Queue *q) { return q->head == NULL; } // True if queue is empty
 
+// Free the address space of the queue
+// Param *q - pointer to queue
+// Void return
 void queue_free(Queue *q) 
 {
     while (!queue_empty(q)) queue_dequeue(q); // keep dequeuing until queue is empty
 }
 
-//Output helpers
-
+// Output helper, prints cpu run timeline
+// Param: *run - pointer to array of which process ran at each tick, total_ticks - total cpu ticks in run
+// Void return
 void print_timeline(int *run, int total_ticks)
 {
     printf("time:");
@@ -63,6 +77,9 @@ void print_timeline(int *run, int total_ticks)
     printf("\n");
 }
 
+// Output helper, prints run metrics
+// Param: *procs - pointer to process list, n - number of processes, *run - array of which process ran at each tick, total_ticks - total cpu ticks in run
+// Void return
 void print_metrics(Process *procs, int n, int *run, int total_ticks)
 {
     double sum_tat = 0.0, sum_resp = 0.0; // Doubles for calculating averages
@@ -87,8 +104,9 @@ void print_metrics(Process *procs, int n, int *run, int total_ticks)
 }
 
 
- // FCFS scheduler
-
+ // The FCFS scheduling method. run each process to completion then go to next.
+// Param: *procs - pointer to process array, n - number of processes
+// void return
 void run_fcfs(Process *procs, int n)
 {
     int *run = malloc(sizeof(int) * MAX_TIME); // allocate for an array for which PID runs each tick
@@ -134,9 +152,8 @@ void run_fcfs(Process *procs, int n)
     free(run); // free timeline array
 }
 
-//Argument parsing & main
-
-
+// print usage instructions.
+// Param: program name
 static void usage(const char *prog)
 	// Prints error response in case invalid format is inputted
 {
@@ -144,6 +161,9 @@ static void usage(const char *prog)
     exit(1);
 }
 
+// Main takes and parses input, sets up data and runs appropriate scheduler
+// Param: argument data, count and arguements
+// Return: status
 int main(int argc, char *argv[])
 {
     char policy[16]  = {0}; // holds "FCFS" or "RR"

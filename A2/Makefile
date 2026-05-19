@@ -1,5 +1,5 @@
 # Student Name:    Dusan Barudzija + Connor Carroll
-# Student ID:      3121720
+# Student ID:      3121720 and 3116723
 # Submission Date: May 24, 2026
 # File Name:       Makefile
 # Description:     Build system for the sched CPU scheduler simulator
