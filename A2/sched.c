@@ -112,13 +112,6 @@ void run_fcfs(Process *procs, int n)
     int *run = malloc(sizeof(int) * MAX_TIME); // allocate for an array for which PID runs each tick
     if (!run) { perror("malloc"); exit(1); }
 
-    /* insertion sort used for arrival time */
-    for (int i = 1; i < n; i++) {
-        Process key = procs[i]; int j = i - 1;
-        while (j >= 0 && procs[j].arrival > key.arrival) { procs[j+1] = procs[j]; j--; }
-        procs[j+1] = key;
-    }
-
     Queue ready; queue_init(&ready);
     int completed = 0, enqueued = 0, current = -1, t = 0;
 
@@ -152,6 +145,56 @@ void run_fcfs(Process *procs, int n)
     free(run); // free timeline array
 }
 
+// round robin scheduling method. switch context to new process every q ticks if process in queue.
+// param: *procs - points to array of processes, q - quantum, n - number of processes 
+// void return
+void run_rr(Process *procs, int q, int n)
+{
+    int *run = malloc(sizeof(int) * MAX_TIME); // allocate for an array for which PID runs each tick
+    if (!run) { perror("malloc"); exit(1); }
+
+    Queue ready; queue_init(&ready);
+    int completed = 0, enqueued = 0, current = -1, t = 0, timer=0;
+
+    while (completed < n) { // Loop until all processes finish
+        while (enqueued < n && procs[enqueued].arrival <= t) {
+            queue_enqueue(&ready, enqueued++); // any process that arrived by tick t goes into ready queue
+        }
+        if (current == -1 && !queue_empty(&ready)){
+            current = queue_dequeue(&ready); // grab next process in front of queue
+        }
+
+        if (current == -1) {
+            run[t] = -1; // If no process, CPU stays idle on this tick
+        } else {
+            if (!procs[current].has_run) {
+                procs[current].first_run = t; // record very first tick this process ran
+                procs[current].has_run   = 1; // flag so we don't overwrite
+            }
+            run[t] = procs[current].pid; // Record the pid that ran this tick
+            timer++; // process ran for a tick increment timer
+            if (--procs[current].remaining == 0) { // decrement
+                procs[current].completion = t + 1; // completion means one past the last tick it ran
+                completed++; // Keep going until complete
+                current = -1; // free the CPU
+                timer=0; // restart cpu usage timer
+            }
+            else if (timer >= q) { // if process is at or past alloted time
+                queue_enqueue(&ready, current); // put the current process at the end of the queue
+                current = -1; // idle cpu until next tick
+                timer = 0; // restart usage timer
+            }
+        }
+        
+        t++;
+    }
+
+    print_timeline(run, t); // Print Gantt chart
+    print_metrics(procs, n, run, t); // print TAT, RESP, and context switches
+    queue_free(&ready); // Free all queue nodes
+    free(run); // free timeline array
+}
+
 // print usage instructions.
 // Param: program name
 static void usage(const char *prog)
@@ -168,14 +211,16 @@ int main(int argc, char *argv[])
 {
     char policy[16]  = {0}; // holds "FCFS" or "RR"
     char infile[256] = {0}; // holds the file name 
+    int q = 0; // init quantum 
 
     for (int i = 1; i < argc; i++) {
         if      (strncmp(argv[i], "--policy=",  9) == 0) strncpy(policy, argv[i]+9,  sizeof(policy)-1); // extract "FCFS" or "RR"
         else if (strncmp(argv[i], "--in=",      5) == 0) strncpy(infile, argv[i]+5,  sizeof(infile)-1); // extract filename
+        else if (strncmp(argv[i], "--quantum=", 10) == 0) q = atoi(argv[i]+10); // extract quantum 
         else { fprintf(stderr, "Unknown argument: %s\n", argv[i]); usage(argv[0]); } // Throw error (run usage function) if invalid inputs
     }
 
-    if (policy[0] == '\0' || infile[0] == '\0') usage(argv[0]); // if inputs missing run usage function
+    if (policy[0] == '\0' || infile[0] == '\0' || q == 0) usage(argv[0]); // if inputs missing run usage function
 
     FILE *fp = fopen(infile, "r");
     if (!fp) { perror(infile); exit(1); } // crash with message if file doesn't exist
@@ -205,6 +250,7 @@ int main(int argc, char *argv[])
     if (n == 0) { fprintf(stderr, "No processes in workload file.\n"); exit(1); }
 
     if      (strcmp(policy, "FCFS") == 0) run_fcfs(procs, n); // run FCFS scheduler
+    else if (strcmp(policy, "RR") == 0) run_rr(procs, q, n); // run RR
     else    { fprintf(stderr, "Unknown policy: %s\n", policy); usage(argv[0]); } // If anything else, throw usage error
 
     return 0;
